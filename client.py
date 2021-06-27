@@ -1,5 +1,6 @@
 # imports
 import socket
+import threading
 
 # define fixed length header (64 bytes)
 HEADER = 64
@@ -14,10 +15,23 @@ SERVER = socket.gethostbyname(socket.gethostname())
 # define address
 ADDR = (SERVER, PORT)
 
+username = input("Input your username: ")
+
 # make a new socket (AF_INET family)
 # bind socket to that address
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
+
+def receive():
+    connected = True
+    while connected:
+        # Receive Message From Server
+        # If 'USER' Send Nickname
+        message = client.recv(HEADER).decode(FORMAT)
+        if message == 'USER':
+            client.send(username.encode(FORMAT))
+        else:
+            print(message)
 
 def send(msg):
     # encode string into byte size object
@@ -32,9 +46,19 @@ def send(msg):
     client.send(message)
     print(client.recv(2048).decode(FORMAT))
 
-connected = True
-while connected:
-    message = input()
-    send(message)
-    if message == DISCONNECT_MESSAGE:
-        connected = False
+
+def write():
+    connected = True
+    while connected:
+        #send the message in username: message format
+        message = '{}: {}'.format(username, input(''))
+        send(message)
+        if message == DISCONNECT_MESSAGE:
+            connected = False
+
+
+receive_thread = threading.Thread(target=receive)
+receive_thread.start()
+
+write_thread = threading.Thread(target=write)
+write_thread.start()

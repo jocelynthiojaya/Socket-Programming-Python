@@ -8,6 +8,7 @@ HEADER = 64
 PORT = 4000
 # define server (local ip address)
 SERVER = socket.gethostbyname(socket.gethostname())
+print(SERVER)
 # define address
 ADDR = (SERVER, PORT)
 # define format
@@ -20,6 +21,14 @@ DISCONNECT_MESSAGE = "!disconnect"
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
+#store clients and their usernames in lists
+clients = []
+usernames = []
+
+def broadcast(message):
+    for client in clients:
+        client.send(message)
+
 # to handle client, runs for EACH client
 def handle_client(conn, addr):
     # print new connection
@@ -30,7 +39,8 @@ def handle_client(conn, addr):
     while connected:
         # when receive information from client - blocking line
         # determine the message length
-        msg_length = conn.recv(HEADER).decode(FORMAT)
+        rawMessage = conn.recv(HEADER)
+        msg_length = rawMessage.decode(FORMAT)
         # if msg_length not null
         if msg_length:
             msg_length = int(msg_length)
@@ -38,10 +48,17 @@ def handle_client(conn, addr):
             msg = conn.recv(msg_length).decode(FORMAT)
             # if receive disconnect message, set connected to False
             if msg == DISCONNECT_MESSAGE:
+                index = clients.index(conn)
+                clients.remove(conn)
+                conn.close()
+                username = username[index]
+                broadcast(f'{username} left the chat!'.encode(FORMAT))
+                usernames.remove(username)
                 connected = False
+            else:
+                broadcast(msg.encode(FORMAT))
 
             print(f"[{addr}] {msg}")
-            conn.send("Message received".encode(FORMAT))
     # close the connection
     conn.close()
         
@@ -54,6 +71,15 @@ def start():
     while True:
         # when new connection occur, store socket object(conn) and address(addr) - blocking line
         conn, addr = server.accept()
+        #request and store username
+        conn.send('USER'.encode(FORMAT))
+        username = conn.recv(HEADER).decode(FORMAT)
+        usernames.append(username)
+        clients.append(conn)
+        #print and broadcast username
+        print("Nickname is {}".format(username))
+        broadcast("{} joined!".format(username).encode(FORMAT))
+        conn.send('Connected to server!'.encode(FORMAT))
         # start a new thread
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
@@ -64,3 +90,5 @@ def start():
 
 print("server is STARTING...")
 start()
+
+#python client.py
