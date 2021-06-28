@@ -18,6 +18,8 @@ Simply chat !disconnect to disconnect a client from the server.
 
 ## Contributors
  Aric Hernando
+
  Bryan Putra 
+ 
  Jocelyn Thiojaya
 
