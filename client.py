@@ -22,16 +22,23 @@ username = input("Input your username: ")
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
 
+
 def receive():
     connected = True
     while connected:
-        # Receive Message From Server
-        # If 'USER' Send Nickname
-        message = client.recv(HEADER).decode(FORMAT)
-        if message == 'USER':
-            client.send(username.encode(FORMAT))
-        else:
-            print(message)
+        try:
+            # Receive Message From Server
+            # If 'USER' Send Username
+            message = client.recv(HEADER).decode(FORMAT)
+            if message == 'USER':
+                client.send(username.encode(FORMAT))
+            else:
+                print(message)
+        except:
+            print("aight ima head out")
+            client.close()
+            connected = False
+
 
 def send(msg):
     # encode string into byte size object
@@ -44,17 +51,17 @@ def send(msg):
     # send to client
     client.send(send_length)
     client.send(message)
-    print(client.recv(2048).decode(FORMAT))
 
 
 def write():
     connected = True
     while connected:
-        #send the message in username: message format
+        # send the message in username: message format
         message = '{}: {}'.format(username, input(''))
         send(message)
-        if message == DISCONNECT_MESSAGE:
+        if DISCONNECT_MESSAGE in message:
             connected = False
+            client.close()
 
 
 receive_thread = threading.Thread(target=receive)

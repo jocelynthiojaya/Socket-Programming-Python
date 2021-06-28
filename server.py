@@ -39,26 +39,25 @@ def handle_client(conn, addr):
     while connected:
         # when receive information from client - blocking line
         # determine the message length
-        rawMessage = conn.recv(HEADER)
-        msg_length = rawMessage.decode(FORMAT)
+        msg_length = conn.recv(HEADER).decode(FORMAT)
         # if msg_length not null
         if msg_length:
             msg_length = int(msg_length)
             # receive the message
             msg = conn.recv(msg_length).decode(FORMAT)
             # if receive disconnect message, set connected to False
-            if msg == DISCONNECT_MESSAGE:
+            # and remove client username from the lists
+            if DISCONNECT_MESSAGE in msg:
                 index = clients.index(conn)
                 clients.remove(conn)
-                conn.close()
-                username = username[index]
+                username = usernames[index]
+                print(f"[{addr}] {username} has disconnected from the server")
                 broadcast(f'{username} left the chat!'.encode(FORMAT))
                 usernames.remove(username)
                 connected = False
             else:
                 broadcast(msg.encode(FORMAT))
-
-            print(f"[{addr}] {msg}")
+                print(f"[{addr}] {msg}")
     # close the connection
     conn.close()
         
@@ -77,7 +76,7 @@ def start():
         usernames.append(username)
         clients.append(conn)
         #print and broadcast username
-        print("Nickname is {}".format(username))
+        print("Username is {}".format(username))
         broadcast("{} joined!".format(username).encode(FORMAT))
         conn.send('Connected to server!'.encode(FORMAT))
         # start a new thread
